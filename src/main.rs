@@ -8,12 +8,11 @@ use gtk::prelude::*;
 use std::env::args;
 
 mod renderers;
-use self::renderers::renderer::Renderer;
 use self::renderers::basic_renderer::BasicRenderer;
+use self::renderers::renderer::Renderer;
 //use self::renderers::empty_renderer::EmptyRenderer;
 
 mod gl_loader;
-
 
 fn build_ui(application: &gtk::Application) {
     let window = gtk::ApplicationWindow::new(application);
@@ -30,33 +29,48 @@ fn build_ui(application: &gtk::Application) {
     let gl = std::rc::Rc::new(BasicRenderer::new());
 
     let gl_area = gtk::GLArea::new();
-    //gl_area.set_vexpand(true);
-    //gtk_widget_set_hexpand(gl_area, TRUE);
-    let gl_clone = gl.clone();
-    gl_area.connect_realize(move |gl_area| {
-        gl_area.make_current();
-        /*
-        if (gtk_gl_area_get_error(area) != NULL) {
-            fprintf(stderr, "Unknown error\n");
-            return;
-        }
-        */
-        gl_area.set_has_depth_buffer(true);
+    gl_area.set_vexpand(true);
+    gl_area.set_hexpand(true);
 
-        gl_loader::load();
+    {
+        let gl_clone = gl.clone();
+        gl_area.connect_realize(move |gl_area| {
+            // setup gl_area
+            gl_area.make_current();
+            match gl_area.get_error() {
+                Some(error) => {
+                    println!("gtk::GLArea error: {}", error);
+                    return;
+                }
+                None => {}
+            }
+            gl_area.set_has_depth_buffer(true);
 
-        gl_clone.initialize();
-    });
+            // initialize opengl
+            gl_loader::load();
 
-    let gl_clone = gl.clone();
-    gl_area.connect_render(move |_area, _context| {
-        gl_clone.render();
+            // setup scene
+            gl_clone.initialize();
+        });
+    }
 
-        Inhibit(true)
-    });
+    {
+        let gl_clone = gl.clone();
+        gl_area.connect_resize(move |_, w, h| {
+            gl_clone.resize(w as u32, h as u32);
+        });
+    }
+
+    {
+        let gl_clone = gl.clone();
+        gl_area.connect_render(move |_area, _context| {
+            gl_clone.render();
+
+            Inhibit(true)
+        });
+    }
 
     window.add(&gl_area);
-
     window.show_all();
 }
 
@@ -68,9 +82,7 @@ fn main() {
         build_ui(app);
     });
 
-    application.connect_activate(|_|{
-
-    });
+    application.connect_activate(|_| {});
 
     application.run(&args().collect::<Vec<_>>());
 }
