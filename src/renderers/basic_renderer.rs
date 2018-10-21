@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::ffi::CStr;
+use super::renderer_error::RendererError;
 use super::renderer;
 use super::shader::Shader;
 
@@ -38,7 +39,7 @@ impl renderer::Renderer for BasicRenderer {
         }
     }
 
-    fn initialize(&self) {
+    fn initialize(&self)->Result<(), RendererError> {
         let renderer = unsafe {
             let p = gl::GetString(gl::RENDERER);
             CStr::from_ptr(p as *const i8)
@@ -54,7 +55,7 @@ impl renderer::Renderer for BasicRenderer {
         //
         // shader
         //
-        let shader = Shader::create(VS_SOURCE, FS_SOURCE).unwrap();
+        let shader = Shader::create(VS_SOURCE, FS_SOURCE)?;
         self.shader.replace(shader);
 
         unsafe {
@@ -78,6 +79,8 @@ impl renderer::Renderer for BasicRenderer {
             gl::EnableVertexAttribArray(0);
             gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
         }
+
+        Ok(())
     }
 
     fn render(&self) {

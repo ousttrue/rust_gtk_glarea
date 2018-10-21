@@ -1,9 +1,9 @@
-pub trait Renderer
-{
-    fn new()->Self;
-    fn initialize(&self);
-    fn resize(&self, w: u32, h: u32)
-    {
+use super::renderer_error::RendererError;
+
+pub trait Renderer {
+    fn new() -> Self;
+    fn initialize(&self) -> Result<(), RendererError>;
+    fn resize(&self, w: u32, h: u32) {
         println!("resize: {}x{}", w, h);
     }
 

@@ -6,7 +6,8 @@ edition = "2018"
 
 [dependencies]
 gio = "^0"
-gtk = { version = "^0", features=["v3_16"] }
+gtk = { version = "^0", features=["v3_22"] }
+gdk = "^0"
 gl = "0.10"
 epoxy = "0.0.4"
 shared_library = "0.1.7"

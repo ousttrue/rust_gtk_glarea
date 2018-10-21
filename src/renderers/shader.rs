@@ -1,20 +1,8 @@
 use std::ffi::CString;
+use super::renderer_error::RendererError;
 
 pub struct Shader {
     pub program: u32,
-}
-
-#[derive(Debug, Clone)]
-pub struct ShaderError {
-    message: String,
-}
-
-impl ShaderError {
-    fn new(message: &str) -> Self {
-        ShaderError {
-            message: message.to_string(),
-        }
-    }
 }
 
 impl Shader {
@@ -25,7 +13,7 @@ impl Shader {
     ///
     /// ref https://github.com/nukep/rust-opengl-util/blob/master/shader.rs
     ///
-    fn check_compile_error(target: u32) -> Result<(), ShaderError> {
+    fn check_compile_error(target: u32) -> Result<(), RendererError> {
         unsafe {
             let mut ok: i32 = 0;
             gl::GetShaderiv(target, gl::COMPILE_STATUS, &mut ok);
@@ -42,9 +30,9 @@ impl Shader {
                     );
                     buf.set_len(len as usize);
                     let cs = CString::from_vec_unchecked(buf);
-                    Err(ShaderError::new(&cs.to_string_lossy()))
+                    Err(RendererError::new(&cs.to_string_lossy()))
                 } else {
-                    Err(ShaderError::new("shader compile error"))
+                    Err(RendererError::new("shader compile error"))
                 }
             } else {
                 Ok(())
@@ -52,7 +40,7 @@ impl Shader {
         }
     }
 
-    fn compile_shader(source: &str, target: u32) -> Result<u32, ShaderError> {
+    fn compile_shader(source: &str, target: u32) -> Result<u32, RendererError> {
         unsafe {
             let shader = gl::CreateShader(target);
             let ptr = source.as_bytes().as_ptr() as *const i8;
@@ -64,7 +52,7 @@ impl Shader {
         }
     }
 
-    fn check_link_error(program: u32) -> Result<(), ShaderError> {
+    fn check_link_error(program: u32) -> Result<(), RendererError> {
         unsafe {
             let mut link_ok: i32 = 0;
             gl::GetProgramiv(program, gl::LINK_STATUS, &mut link_ok);
@@ -81,9 +69,9 @@ impl Shader {
                     );
                     buf.set_len(len as usize);
                     let cs = CString::from_vec_unchecked(buf);
-                    Err(ShaderError::new(&cs.to_string_lossy()))
+                    Err(RendererError::new(&cs.to_string_lossy()))
                 } else {
-                    Err(ShaderError::new("shader link error"))
+                    Err(RendererError::new("shader link error"))
                 }
             } else {
                 Ok(())
@@ -91,7 +79,7 @@ impl Shader {
         }
     }
 
-    fn link(vs: u32, fs: u32) -> Result<u32, ShaderError> {
+    fn link(vs: u32, fs: u32) -> Result<u32, RendererError> {
         let program = unsafe { gl::CreateProgram() };
         unsafe {
             gl::AttachShader(program, vs);
@@ -102,7 +90,7 @@ impl Shader {
         Ok(program)
     }
 
-    pub fn create(vs_source: &str, fs_source: &str) -> Result<Self, ShaderError> {
+    pub fn create(vs_source: &str, fs_source: &str) -> Result<Self, RendererError> {
         let vs = Self::compile_shader(vs_source, gl::VERTEX_SHADER)?;
         let fs = Self::compile_shader(fs_source, gl::FRAGMENT_SHADER)?;
         let program = Self::link(vs, fs)?;

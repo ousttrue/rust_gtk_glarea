@@ -2,9 +2,11 @@ extern crate epoxy;
 extern crate gio;
 extern crate gl;
 extern crate gtk;
+extern crate gdk;
 
 use gio::prelude::*;
 use gtk::prelude::*;
+use gdk::prelude::*;
 use std::env::args;
 
 mod renderers;
@@ -31,6 +33,8 @@ fn build_ui(application: &gtk::Application) {
     let gl_area = gtk::GLArea::new();
     gl_area.set_vexpand(true);
     gl_area.set_hexpand(true);
+    //gl_area.set_use_es(true);  // undefined
+    gl_area.set_required_version(4, 6); // default 3.2
 
     {
         let gl_clone = gl.clone();
@@ -46,11 +50,21 @@ fn build_ui(application: &gtk::Application) {
             }
             gl_area.set_has_depth_buffer(true);
 
+            match gl_area.get_context() {
+                Some(context) =>{
+
+                    let version = context.get_version();
+                    println!("context version: {}.{}", version.0, version.1);
+
+                }
+                None=>{}
+            }
+
             // initialize opengl
             gl_loader::load();
 
             // setup scene
-            gl_clone.initialize();
+            gl_clone.initialize().unwrap();
         });
     }
 
