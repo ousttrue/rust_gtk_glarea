@@ -9,8 +9,8 @@ use std::env::args;
 
 mod renderers;
 use self::renderers::renderer::Renderer;
-//use self::renderers::basic_renderer::BasicRenderer;
-use self::renderers::empty_renderer::EmptyRenderer;
+use self::renderers::basic_renderer::BasicRenderer;
+//use self::renderers::empty_renderer::EmptyRenderer;
 
 mod gl_loader;
 
@@ -27,8 +27,7 @@ fn build_ui(application: &gtk::Application) {
         Inhibit(false)
     });
 
-    let gl = std::rc::Rc::new(EmptyRenderer{
-    });
+    let gl = std::rc::Rc::new(BasicRenderer::new());
 
     let gl_area = gtk::GLArea::new();
     //gl_area.set_vexpand(true);
