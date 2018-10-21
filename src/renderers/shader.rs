@@ -1,12 +1,29 @@
-use std::ffi::CString;
 use super::renderer_error::RendererError;
+use std::ffi::CString;
 
 pub struct Shader {
-    pub program: u32,
+    program: u32,
+}
+
+impl Drop for Shader {
+    fn drop(&mut self) {
+        if self.program != 0 {
+            unsafe {
+                gl::DeleteProgram(self.program);
+            }
+            println!("deleteProgram: {}", self.program);
+            self.program = 0;
+        }
+    }
 }
 
 impl Shader {
-    pub fn new(program: u32) -> Self {
+    pub fn empty() -> Self {
+        Shader { program: 0 }
+    }
+
+    pub fn new() -> Self {
+        let program = unsafe { gl::CreateProgram() };
         Shader { program }
     }
 
@@ -79,21 +96,25 @@ impl Shader {
         }
     }
 
-    fn link(vs: u32, fs: u32) -> Result<u32, RendererError> {
-        let program = unsafe { gl::CreateProgram() };
+    fn link(&self, vs: u32, fs: u32) -> Result<(), RendererError> {
         unsafe {
-            gl::AttachShader(program, vs);
-            gl::AttachShader(program, fs);
-            gl::LinkProgram(program);
+            gl::AttachShader(self.program, vs);
+            gl::AttachShader(self.program, fs);
+            gl::LinkProgram(self.program);
         }
-        Self::check_link_error(program)?;
-        Ok(program)
+        Self::check_link_error(self.program)?;
+        Ok(())
     }
 
-    pub fn create(vs_source: &str, fs_source: &str) -> Result<Self, RendererError> {
+    pub fn compile(&self, vs_source: &str, fs_source: &str) -> Result<(), RendererError> {
         let vs = Self::compile_shader(vs_source, gl::VERTEX_SHADER)?;
         let fs = Self::compile_shader(fs_source, gl::FRAGMENT_SHADER)?;
-        let program = Self::link(vs, fs)?;
-        Ok(Self::new(program))
+        self.link(vs, fs)
+    }
+
+    pub fn activate(&self) {
+        unsafe {
+            gl::UseProgram(self.program);
+        }
     }
 }

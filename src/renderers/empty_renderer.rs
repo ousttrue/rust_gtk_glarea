@@ -1,15 +1,10 @@
 use super::renderer;
-use super::renderer_error::RendererError;
 
 pub struct EmptyRenderer {}
 
 impl renderer::Renderer for EmptyRenderer {
     fn new() -> Self {
         EmptyRenderer {}
-    }
-
-    fn initialize(&self)->Result<(), RendererError> {
-        Ok(())
     }
 
     fn render(&self) {

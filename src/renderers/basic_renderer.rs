@@ -3,6 +3,7 @@ use std::ffi::CStr;
 use super::renderer_error::RendererError;
 use super::renderer;
 use super::shader::Shader;
+use super::vertexbuffer::{Vao, Vbo};
 
 //
 // shader
@@ -22,20 +23,63 @@ void main (void) {
 }";
 
 
-pub struct BasicRenderer {
-    shader: RefCell<Shader>,
-    vao: RefCell<u32>,
-    vbo_triangle: RefCell<u32>,
-    //attribute_coord2d: RefCell<i32>,
+struct Scene
+{
+    shader: Shader,
+    vao: Vao,
 }
+
+impl Scene {
+    pub fn new()->Self{
+        Scene {
+            shader: Shader::empty(),
+            vao: Vao::empty()
+        }
+    }
+
+    pub fn initialize(&mut self)->Result<(), RendererError>
+    {
+        //
+        // shader
+        //
+        self.shader = Shader::new();
+        self.shader.compile(VS_SOURCE, FS_SOURCE)?;
+
+        //
+        // vao
+        //
+        self.vao = Vao::new();
+    
+        let vbo = Vbo::new();
+        let vertices: [f32; 6] = [0.0, 0.8, -0.8, -0.8, 0.8, -0.8];
+        vbo.assign(&vertices);
+        self.vao.append(vbo);
+
+        Ok(())
+    }
+
+    pub fn draw(&self)
+    {
+        unsafe {
+            gl::ClearColor(0.5f32, 1.0f32, 0.5f32, 1.0f32);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        }
+
+        self.shader.activate();
+        self.vao.draw();
+    }
+}
+
+
+pub struct BasicRenderer {
+    scene: RefCell<Scene>,
+}
+
 
 impl renderer::Renderer for BasicRenderer {
     fn new() -> Self {
         BasicRenderer {
-            shader: RefCell::new(Shader::new(0)),
-            vao: RefCell::new(0),
-            vbo_triangle: RefCell::new(0),
-            //attribute_coord2d: RefCell::new(0),
+            scene: RefCell::new(Scene::new())
         }
     }
 
@@ -52,47 +96,10 @@ impl renderer::Renderer for BasicRenderer {
         };
         println!("OpenGL version supported: {}", version.to_string_lossy());
 
-        //
-        // shader
-        //
-        let shader = Shader::create(VS_SOURCE, FS_SOURCE)?;
-        self.shader.replace(shader);
-
-        unsafe {
-            //
-            // vao
-            //
-            gl::GenVertexArrays(1, self.vao.as_ptr() as *mut gl::types::GLuint);
-            gl::BindVertexArray(*self.vao.as_ptr());
-
-            let triangle_vertices: [f32; 6] = [0.0, 0.8, -0.8, -0.8, 0.8, -0.8];
-            gl::GenBuffers(1, self.vbo_triangle.as_ptr() as *mut gl::types::GLuint);
-            gl::BindBuffer(gl::ARRAY_BUFFER, *self.vbo_triangle.as_ptr());
-
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                std::mem::size_of_val(&triangle_vertices) as isize,
-                (&triangle_vertices).as_ptr() as *mut std::ffi::c_void,
-                gl::STATIC_DRAW,
-            );
-
-            gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
-        }
-
-        Ok(())
+        self.scene.borrow_mut().initialize()
     }
 
     fn render(&self) {
-        unsafe {
-            gl::ClearColor(0.5f32, 1.0f32, 0.5f32, 1.0f32);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
-            gl::UseProgram(self.shader.borrow().program);
-
-            gl::BindVertexArray(*self.vao.as_ptr());
-
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
-        }
+        self.scene.borrow().draw();
     }
 }
