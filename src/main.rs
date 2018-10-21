@@ -68,5 +68,9 @@ fn main() {
         build_ui(app);
     });
 
+    application.connect_activate(|_|{
+
+    });
+
     application.run(&args().collect::<Vec<_>>());
 }
