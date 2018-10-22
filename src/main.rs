@@ -23,10 +23,6 @@ fn build_ui(application: &gtk::Application) {
     window.set_default_size(640, 480);
     window.set_border_width(10);
     window.set_position(gtk::WindowPosition::Center);
-    window.connect_delete_event(move |win, _| {
-        win.destroy();
-        Inhibit(false)
-    });
 
     let gl = std::rc::Rc::new(BasicRenderer::new());
 
@@ -79,8 +75,16 @@ fn build_ui(application: &gtk::Application) {
         let gl_clone = gl.clone();
         gl_area.connect_render(move |_area, _context| {
             gl_clone.render();
-
             Inhibit(true)
+        });
+    }
+
+    {
+        let gl_clone = gl.clone();
+        window.connect_delete_event(move |win, _| {
+            gl_clone.finalize();
+            win.destroy();
+            Inhibit(false)
         });
     }
 

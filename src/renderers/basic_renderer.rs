@@ -49,7 +49,7 @@ impl Scene {
         // vao
         //
         self.vao = Vao::new();
-    
+
         let vbo = Vbo::new();
         let vertices: [f32; 6] = [0.0, 0.8, -0.8, -0.8, 0.8, -0.8];
         vbo.assign(&vertices);
@@ -97,6 +97,11 @@ impl renderer::Renderer for BasicRenderer {
         println!("OpenGL version supported: {}", version.to_string_lossy());
 
         self.scene.borrow_mut().initialize()
+    }
+
+    fn finalize(&self)
+    {
+        self.scene.replace(Scene::new());
     }
 
     fn render(&self) {
