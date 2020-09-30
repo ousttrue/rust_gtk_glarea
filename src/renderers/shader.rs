@@ -38,18 +38,14 @@ impl Shader {
                 let mut len: i32 = 0;
                 gl::GetShaderiv(target, gl::INFO_LOG_LENGTH, &mut len);
                 if len > 1 {
-                    let mut buf = Vec::<u8>::with_capacity(len as usize);
-                    gl::GetShaderInfoLog(
-                        target,
-                        buf.len() as i32,
-                        &mut len,
-                        buf.as_mut_ptr() as *mut i8,
-                    );
+                    let mut buf = Vec::with_capacity(len as usize);
+                    let buf_ptr = buf.as_mut_ptr() as *mut gl::types::GLchar;
+                    gl::GetShaderInfoLog(target, len, std::ptr::null_mut(), buf_ptr);
                     buf.set_len(len as usize);
-                    let cs = CString::from_vec_unchecked(buf);
-                    Err(RendererError::new(&cs.to_string_lossy()))
+                    let s = String::from_utf8(buf).unwrap();
+                    Err(RendererError::new(s.as_str()))
                 } else {
-                    Err(RendererError::new("shader compile error"))
+                    Err(RendererError::new("shader compiler unknown error"))
                 }
             } else {
                 Ok(())
@@ -64,7 +60,13 @@ impl Shader {
             let len = source.len() as i32;
             gl::ShaderSource(shader, 1, &ptr, &len);
             gl::CompileShader(shader);
-            Self::check_compile_error(shader)?;
+            let r = Self::check_compile_error(shader);
+            match r {
+                Ok(_) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            }
             Ok(shader)
         }
     }
@@ -88,7 +90,7 @@ impl Shader {
                     let cs = CString::from_vec_unchecked(buf);
                     Err(RendererError::new(&cs.to_string_lossy()))
                 } else {
-                    Err(RendererError::new("shader link error"))
+                    Err(RendererError::new("shader link with unknown error"))
                 }
             } else {
                 Ok(())
@@ -109,7 +111,8 @@ impl Shader {
     pub fn compile(&self, vs_source: &str, fs_source: &str) -> Result<(), RendererError> {
         let vs = Self::compile_shader(vs_source, gl::VERTEX_SHADER)?;
         let fs = Self::compile_shader(fs_source, gl::FRAGMENT_SHADER)?;
-        self.link(vs, fs)
+        let r = self.link(vs, fs);
+        r
     }
 
     pub fn activate(&self) {

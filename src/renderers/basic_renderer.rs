@@ -8,18 +8,19 @@ use super::vertexbuffer::{Vao, Vbo};
 //
 // shader
 //
-const VS_SOURCE: &'static str = "#version 420
+const VS_SOURCE: &'static str = "#version 300 es
 in vec2 coord2d;
 void main () {
    gl_Position = vec4(coord2d, 0.0, 1.0);
 }
 ";
 
-const FS_SOURCE: &'static str = "#version 420
-void main (void) {
-   gl_FragColor[0] = 0.0;
-   gl_FragColor[1] = 0.0;
-   gl_FragColor[2] = 1.0;
+const FS_SOURCE: &'static str = "#version 300 es
+precision mediump float;
+out vec4 fragColor;
+void main()
+{
+    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }";
 
 
@@ -48,6 +49,7 @@ impl Scene {
         //
         // vao
         //
+
         self.vao = Vao::new();
 
         let vbo = Vbo::new();
