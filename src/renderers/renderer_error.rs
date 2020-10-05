@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct RendererError {
-    message: String,
+    pub message: String,
 }
 
 impl RendererError {
